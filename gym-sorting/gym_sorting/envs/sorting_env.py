@@ -12,18 +12,23 @@ class SortingEnv(gym.Env):
 
         self.init_list = init_list
         self.max = max(self.init_list)
+        self.len = len(self.init_list)
 
         self.reward_range = (-100, 100)
         self.action_space = spaces.Discrete(9)
-        self.observation_space = spaces.Box(low=0, high=np.iinfo(np.uint64).max, shape=(1,), dtype=np.uint64)
+        self.observation_space = spaces.Box(low=np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, *([0] * self.len), 0, 0, 0], dtype=np.uint64), 
+                                            high=np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, self.len, *([self.max] * self.len), self.len, self.len, np.iinfo(np.uint64).max], dtype=np.uint64), 
+                                            dtype=np.uint64)
 
     def reset(self):
+
+        self.list = self.init_list
+        self.max = max(self.list)
+        self.len = len(self.list)
 
         self.i = 0
         self.j = 0
         self.k = 0
-        self.len = len(self.init_list)
-        self.list = self.init_list
 
         self.update_flags()
 
@@ -39,35 +44,26 @@ class SortingEnv(gym.Env):
         self.ieqlen = (self.i == self.len)
         self.jeqlen = (self.j == self.len)
         self.keqlen = (self.k == self.len)
-        self.listigtlistj = (self.list[self.i] > self.list[self.j])
+        self.listigtlistj = (self.i < self.len) and (self.j < self.len) and (self.list[self.i] > self.list[self.j])
 
     def encode_state(self):
 
-        val_bits_pairs = [
-            (self.ieq0,         int(1).bit_length()),
-            (self.jeq0,         int(1).bit_length()),
-            (self.keq0,         int(1).bit_length()),
-            (self.iltj,         int(1).bit_length()),
-            (self.jlti,         int(1).bit_length()),
-            (self.ieqlen,       int(1).bit_length()),
-            (self.jeqlen,       int(1).bit_length()),
-            (self.keqlen,       int(1).bit_length()),
-            (self.listigtlistj, int(1).bit_length()),
-            (self.len,          self.len.bit_length()),
-            *zip(self.list,     [max(self.list).bit_length()] * self.len),
-            (self.i,            self.len.bit_length()),
-            (self.j,            self.len.bit_length()),
-            (self.k,            0)  # This has an infinite bound. Zero is a placeholder.
-        ]
-
-        state, shift = 0, 0
-
-        for val, bits in val_bits_pairs:
-
-            state += (val << shift)
-            shift += bits
-
-        return np.array([state], dtype=np.uint64)
+        return np.array([
+            np.uint64(self.ieq0),
+            np.uint64(self.jeq0),
+            np.uint64(self.keq0),
+            np.uint64(self.iltj),
+            np.uint64(self.jlti),
+            np.uint64(self.ieqlen),
+            np.uint64(self.jeqlen),
+            np.uint64(self.keqlen),
+            np.uint64(self.listigtlistj),
+            np.uint64(self.len),
+            *[np.uint64(element) for element in self.list],
+            np.uint64(self.i),
+            np.uint64(self.j),
+            np.uint64(self.k)
+        ])
 
     def step(self, action):
 
@@ -94,7 +90,7 @@ class SortingEnv(gym.Env):
         
         # INCK
         elif action == 4:
-            self.k += 1
+            self.k = min(self.k + 1, np.iinfo(np.uint64).max)
         
         # SETIZERO
         elif action == 5:
