@@ -2,6 +2,21 @@ import gym
 from gym import spaces
 from math import inf
 import numpy as np
+from enum import Enum
+
+
+class Action(Enum):
+
+    NOOP = 0
+    TERMINATE = 1
+    INCI = 2
+    INCJ = 3
+    INCK = 4
+    SETIZERO = 5
+    SETJZERO = 6
+    SETKZERO = 7
+    SWAP = 8
+
 
 class SortingEnv(gym.Env):
 
@@ -70,42 +85,33 @@ class SortingEnv(gym.Env):
         reward = 0
         done = False
 
-        # NOOP
-        if action == 0:
+        if Action(action) == Action.NOOP:
             pass
         
-        # TERMINATE
-        elif action == 1:
+        elif Action(action) == Action.TERMINATE:
 
             done = True
             reward = 100 if (self.list == sorted(self.list)) else -100
 
-        # INCI
-        elif action == 2:
+        elif Action(action) == Action.INCI:
             self.i = min(self.i + 1, self.len)
 
-        # INCJ
-        elif action == 3:
+        elif Action(action) == Action.INCJ:
             self.j = min(self.j + 1, self.len)
         
-        # INCK
-        elif action == 4:
+        elif Action(action) == Action.INCK:
             self.k = min(self.k + 1, np.iinfo(np.uint64).max)
         
-        # SETIZERO
-        elif action == 5:
+        elif Action(action) == Action.SETIZERO:
             self.i = 0
         
-        # SETJZERO
-        elif action == 6:
+        elif Action(action) == Action.SETJZERO:
             self.j = 0
 
-        # SETKZERO
-        elif action == 7:
+        elif Action(action) == Action.SETKZERO:
             self.k = 0
 
-        # SWAP
-        elif action == 8:
+        elif Action(action) == Action.SWAP:
 
             # Out of bounds exception. Swap not possible.
             if (self.i >= self.len) or (self.j >= self.len):
