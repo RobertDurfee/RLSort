@@ -5,19 +5,6 @@ import numpy as np
 from enum import Enum
 
 
-class Action(Enum):
-
-    NOOP = 0
-    TERMINATE = 1
-    INCI = 2
-    INCJ = 3
-    INCK = 4
-    SETIZERO = 5
-    SETJZERO = 6
-    SETKZERO = 7
-    SWAP = 8
-
-
 class SortingEnv(gym.Env):
 
     metadata = { 'render.modes': [ 'ascii' ] }
@@ -27,7 +14,7 @@ class SortingEnv(gym.Env):
         self.init_list = init_list
 
         self.reward_range = (-100, 100)
-        self.action_space = spaces.Box(low=0, high=8, dtype=np.byte)
+        self.action_space = spaces.Box(low=np.array([0], dtype=np.byte), high=np.array([8], dtype=np.byte), dtype=np.byte)
         self.observation_space = spaces.Box(low=np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.byte), 
                                             high=np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 8], dtype=np.byte), 
                                             dtype=np.byte)
@@ -43,7 +30,7 @@ class SortingEnv(gym.Env):
 
         # RP-Specific
         self.update_flags()
-        self.last_action = Action.NOOP
+        self.last_action = 0  # NOOP
 
         return self.encode_state()
 
@@ -79,33 +66,42 @@ class SortingEnv(gym.Env):
         reward = 0
         done = False
 
-        if Action(action) == Action.NOOP:
+        # NOOP
+        if action == 0:
             pass
         
-        elif Action(action) == Action.TERMINATE:
+        # TERMINATE
+        elif action == 1:
 
             done = True
             reward = 100 if (self.list == sorted(self.list)) else -100
 
-        elif Action(action) == Action.INCI:
+        # INCI
+        elif action == 2:
             self.i = min(self.i + 1, self.len)
 
-        elif Action(action) == Action.INCJ:
+        # INCJ
+        elif action == 3:
             self.j = min(self.j + 1, self.len)
         
-        elif Action(action) == Action.INCK:
+        # INCK
+        elif action == 4:
             self.k = min(self.k + 1, np.iinfo(np.uint64).max)
         
-        elif Action(action) == Action.SETIZERO:
+        # SETIZERO
+        elif action == 5:
             self.i = 0
         
-        elif Action(action) == Action.SETJZERO:
+        # SETJZERO
+        elif action == 6:
             self.j = 0
 
-        elif Action(action) == Action.SETKZERO:
+        # SETKZERO
+        elif action == 7:
             self.k = 0
 
-        elif Action(action) == Action.SWAP:
+        # SWAP
+        elif action == 8:
 
             # Out of bounds exception. Swap not possible.
             if (self.i >= self.len) or (self.j >= self.len):
