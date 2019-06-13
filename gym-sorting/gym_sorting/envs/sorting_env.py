@@ -25,26 +25,25 @@ class SortingEnv(gym.Env):
     def __init__(self, init_list):
 
         self.init_list = init_list
-        self.max = max(self.init_list)
-        self.len = len(self.init_list)
 
         self.reward_range = (-100, 100)
-        self.action_space = spaces.Discrete(9)
-        self.observation_space = spaces.Box(low=np.array([0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.byte), 
-                                            high=np.array([1, 1, 1, 1, 1, 1, 1, 1, 1], dtype=np.byte), 
+        self.action_space = spaces.Box(low=0, high=8, dtype=np.byte)
+        self.observation_space = spaces.Box(low=np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.byte), 
+                                            high=np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 8], dtype=np.byte), 
                                             dtype=np.byte)
 
     def reset(self):
 
-        self.list = self.init_list
-        self.max = max(self.list)
-        self.len = len(self.list)
-
+        # Data-Specific
         self.i = 0
         self.j = 0
         self.k = 0
+        self.len = len(self.init_list)
+        self.list = self.init_list
 
+        # RP-Specific
         self.update_flags()
+        self.last_action = Action.NOOP
 
         return self.encode_state()
 
@@ -52,12 +51,12 @@ class SortingEnv(gym.Env):
 
         self.ieq0 = (self.i == 0)
         self.jeq0 = (self.j == 0)
-        self.keq0 = (self.k == 0)
-        self.iltj = (self.i < self.j)
-        self.jlti = (self.j < self.i)
         self.ieqlen = (self.i == self.len)
         self.jeqlen = (self.j == self.len)
+        self.keq0 = (self.k == 0)
         self.keqlen = (self.k == self.len)
+        self.iltj = (self.i < self.j)
+        self.jlti = (self.j < self.i)
         self.listigtlistj = (self.i < self.len) and (self.j < self.len) and (self.list[self.i] > self.list[self.j])
 
     def encode_state(self):
@@ -65,13 +64,14 @@ class SortingEnv(gym.Env):
         return np.array([
             np.byte(self.ieq0),
             np.byte(self.jeq0),
-            np.byte(self.keq0),
-            np.byte(self.iltj),
-            np.byte(self.jlti),
             np.byte(self.ieqlen),
             np.byte(self.jeqlen),
+            np.byte(self.keq0),
             np.byte(self.keqlen),
-            np.byte(self.listigtlistj)
+            np.byte(self.iltj),
+            np.byte(self.jlti),
+            np.byte(self.listigtlistj),
+            np.byte(self.last_action)
         ])
 
     def step(self, action):
