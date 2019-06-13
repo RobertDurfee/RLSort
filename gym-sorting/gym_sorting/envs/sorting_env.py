@@ -162,10 +162,11 @@ class SortingEnv(gym.Env):
 
     def render(self, mode='ascii'):
 
+        print(f"Data-Specific:")
         print(f"i = {self.i}, j = {self.j}")
         print(f"k = {self.k}, len = {self.len}")
         print(f"list = {self.list}")
-        print(f"---------------------------------")
+        print(f"RP-Specific:")
         print(f"i {'=' if self.ieq0 else '!='} 0, j {'=' if self.jeq0 else '!='} 0")
         print(f"i {'=' if self.ieqlen else '!='} len, j {'=' if self.jeqlen else '!='} len")
         print(f"k {'=' if self.keq0 else '!='} 0, k {'=' if self.keqlen else '!='} len")
