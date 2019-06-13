@@ -20,9 +20,8 @@ class Action(Enum):
 
 class SortingEnv(gym.Env):
 
-    metadata = { 'render.modes': [ 'human' ] }
+    metadata = { 'render.modes': [ 'ascii' ] }
 
-    # init_list can only contain non-negative integers!!!
     def __init__(self, init_list):
 
         self.init_list = init_list
@@ -31,9 +30,9 @@ class SortingEnv(gym.Env):
 
         self.reward_range = (-100, 100)
         self.action_space = spaces.Discrete(9)
-        self.observation_space = spaces.Box(low=np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, *([0] * self.len), 0, 0, 0], dtype=np.uint64), 
-                                            high=np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, self.len, *([self.max] * self.len), self.len, self.len, np.iinfo(np.uint64).max], dtype=np.uint64), 
-                                            dtype=np.uint64)
+        self.observation_space = spaces.Box(low=np.array([0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.byte), 
+                                            high=np.array([1, 1, 1, 1, 1, 1, 1, 1, 1], dtype=np.byte), 
+                                            dtype=np.byte)
 
     def reset(self):
 
@@ -64,20 +63,15 @@ class SortingEnv(gym.Env):
     def encode_state(self):
 
         return np.array([
-            np.uint64(self.ieq0),
-            np.uint64(self.jeq0),
-            np.uint64(self.keq0),
-            np.uint64(self.iltj),
-            np.uint64(self.jlti),
-            np.uint64(self.ieqlen),
-            np.uint64(self.jeqlen),
-            np.uint64(self.keqlen),
-            np.uint64(self.listigtlistj),
-            np.uint64(self.len),
-            *[np.uint64(element) for element in self.list],
-            np.uint64(self.i),
-            np.uint64(self.j),
-            np.uint64(self.k)
+            np.byte(self.ieq0),
+            np.byte(self.jeq0),
+            np.byte(self.keq0),
+            np.byte(self.iltj),
+            np.byte(self.jlti),
+            np.byte(self.ieqlen),
+            np.byte(self.jeqlen),
+            np.byte(self.keqlen),
+            np.byte(self.listigtlistj)
         ])
 
     def step(self, action):
@@ -138,7 +132,7 @@ class SortingEnv(gym.Env):
 
         return self.encode_state(), reward, done, {}
 
-    def render(self, mode='human'):
+    def render(self, mode='ascii'):
 
         print(f"i = {self.i}, j = {self.j}")
         print(f"k = {self.k}, len = {self.len}")
