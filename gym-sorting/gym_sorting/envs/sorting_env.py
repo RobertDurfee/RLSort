@@ -14,7 +14,7 @@ class SortingEnv(gym.Env):
         self.init_list = init_list
 
         self.reward_range = (-100, 100)
-        self.action_space = spaces.Box(low=np.array([0], dtype=np.byte), high=np.array([8], dtype=np.byte), dtype=np.byte)
+        self.action_space = spaces.Box(low=np.array([1], dtype=np.byte), high=np.array([8], dtype=np.byte), dtype=np.byte)
         self.observation_space = spaces.Box(low=np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.byte), 
                                             high=np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 8], dtype=np.byte), 
                                             dtype=np.byte)
@@ -66,39 +66,55 @@ class SortingEnv(gym.Env):
         reward = 0
         done = False
 
-        # NOOP
-        if action == 0:
-            pass
-        
         # TERMINATE
-        elif action == 1:
+        if action == 1:
 
             done = True
             reward = 100 if (self.list == sorted(self.list)) else -100
 
+            self.last_action = 1
+
         # INCI
         elif action == 2:
+
             self.i = min(self.i + 1, self.len)
+
+            self.last_action = 2
 
         # INCJ
         elif action == 3:
+
             self.j = min(self.j + 1, self.len)
+
+            self.last_action = 3
         
         # INCK
         elif action == 4:
+
             self.k = min(self.k + 1, np.iinfo(np.uint64).max)
+
+            self.last_action = 4
         
         # SETIZERO
         elif action == 5:
+
             self.i = 0
+
+            self.last_action = 5
         
         # SETJZERO
         elif action == 6:
+
             self.j = 0
+
+            self.last_action = 6
 
         # SETKZERO
         elif action == 7:
+
             self.k = 0
+
+            self.last_action = 7
 
         # SWAP
         elif action == 8:
@@ -123,10 +139,26 @@ class SortingEnv(gym.Env):
                 # ..., list_i/list_j, ... (swap has no effect)
                 else:
                     reward = -10
+            
+            self.last_action = 8
 
         self.update_flags()
 
         return self.encode_state(), reward, done, {}
+
+    def pretty_last_action(self):
+
+        return [
+            'NOOP',
+            'TERMINATE',
+            'INCI',
+            'INCJ',
+            'INCK',
+            'SETIZERO',
+            'SETJZERO',
+            'SETKZERO',
+            'SWAP'
+        ][self.last_action]
 
     def render(self, mode='ascii'):
 
@@ -139,3 +171,4 @@ class SortingEnv(gym.Env):
         print(f"k {'=' if self.keq0 else '!='} 0, k {'=' if self.keqlen else '!='} len")
         print(f"i {'<' if self.iltj else '>='} j, j {'<' if self.jlti else '>='} i")
         print(f"list[i] {'>' if self.listigtlistj else '<='} list[j]")
+        print(self.pretty_last_action())
