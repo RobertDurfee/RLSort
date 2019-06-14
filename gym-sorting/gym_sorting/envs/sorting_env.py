@@ -14,10 +14,12 @@ class SortingEnv(gym.Env):
         self.init_list = init_list
 
         self.reward_range = (-100, 100)
-        self.action_space = spaces.Box(low=np.array([1], dtype=np.byte), high=np.array([8], dtype=np.byte), dtype=np.byte)
-        self.observation_space = spaces.Box(low=np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.byte), 
-                                            high=np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 8], dtype=np.byte), 
-                                            dtype=np.byte)
+        self.action_space = spaces.Box(low=np.array([1], dtype=np.uint8), 
+                                       high=np.array([8], dtype=np.uint8), 
+                                       dtype=np.uint8)
+        self.observation_space = spaces.Box(low=np.array([0], dtype=np.uint16), 
+                                            high=np.array([4_607], dtype=np.uint16), 
+                                            dtype=np.uint16)
 
     def reset(self):
 
@@ -30,7 +32,7 @@ class SortingEnv(gym.Env):
 
         # RP-Specific
         self.update_flags()
-        self.last_action = 0  # NOOP
+        self.last_action = np.array([0], dtype=np.uint16)  # NOOP
 
         return self.encode_state()
 
@@ -48,18 +50,16 @@ class SortingEnv(gym.Env):
 
     def encode_state(self):
 
-        return np.array([
-            np.byte(self.ieq0),
-            np.byte(self.jeq0),
-            np.byte(self.ieqlen),
-            np.byte(self.jeqlen),
-            np.byte(self.keq0),
-            np.byte(self.keqlen),
-            np.byte(self.iltj),
-            np.byte(self.jlti),
-            np.byte(self.listigtlistj),
-            np.byte(self.last_action)
-        ])
+        return np.array([(self.ieq0 << 0) \
+            + (self.jeq0 << 1)            \
+            + (self.ieqlen << 2)          \
+            + (self.jeqlen << 3)          \
+            + (self.keq0 << 4)            \
+            + (self.keqlen << 5)          \
+            + (self.iltj << 6)            \
+            + (self.jlti << 7)            \
+            + (self.listigtlistj << 8)    \
+            + (self.last_action[0] << 9)], dtype=np.uint16)
 
     def step(self, action):
 
@@ -67,57 +67,37 @@ class SortingEnv(gym.Env):
         done = False
 
         # TERMINATE
-        if action == 1:
+        if action[0] == 1:
 
             done = True
             reward = 100 if (self.list == sorted(self.list)) else -100
 
-            self.last_action = 1
-
         # INCI
-        elif action == 2:
-
+        elif action[0] == 2:
             self.i = min(self.i + 1, self.len)
 
-            self.last_action = 2
-
         # INCJ
-        elif action == 3:
-
+        elif action[0] == 3:
             self.j = min(self.j + 1, self.len)
 
-            self.last_action = 3
-        
         # INCK
-        elif action == 4:
-
+        elif action[0] == 4:
             self.k = min(self.k + 1, np.iinfo(np.uint64).max)
 
-            self.last_action = 4
-        
         # SETIZERO
-        elif action == 5:
-
+        elif action[0] == 5:
             self.i = 0
-
-            self.last_action = 5
         
         # SETJZERO
-        elif action == 6:
-
+        elif action[0] == 6:
             self.j = 0
 
-            self.last_action = 6
-
         # SETKZERO
-        elif action == 7:
-
+        elif action[0] == 7:
             self.k = 0
 
-            self.last_action = 7
-
         # SWAP
-        elif action == 8:
+        elif action[0] == 8:
 
             # Out of bounds exception. Swap not possible.
             if (self.i >= self.len) or (self.j >= self.len):
@@ -140,8 +120,7 @@ class SortingEnv(gym.Env):
                 else:
                     reward = -10
             
-            self.last_action = 8
-
+        self.last_action = action
         self.update_flags()
 
         return self.encode_state(), reward, done, {}
@@ -158,7 +137,7 @@ class SortingEnv(gym.Env):
             'SETJZERO',
             'SETKZERO',
             'SWAP'
-        ][self.last_action]
+        ][self.last_action[0]]
 
     def render(self, mode='ascii'):
 
