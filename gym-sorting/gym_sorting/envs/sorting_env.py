@@ -14,12 +14,8 @@ class SortingEnv(gym.Env):
         self.init_list = init_list
 
         self.reward_range = (-100, 100)
-        self.action_space = spaces.Box(low=np.array([1], dtype=np.uint8), 
-                                       high=np.array([8], dtype=np.uint8), 
-                                       dtype=np.uint8)
-        self.observation_space = spaces.Box(low=np.array([0], dtype=np.uint16), 
-                                            high=np.array([4_607], dtype=np.uint16), 
-                                            dtype=np.uint16)
+        self.action_space = spaces.Discrete(n=9)
+        self.observation_space = spaces.Discrete(n=4608)
 
     def reset(self):
 
@@ -32,7 +28,7 @@ class SortingEnv(gym.Env):
 
         # RP-Specific
         self.update_flags()
-        self.last_action = np.array([0], dtype=np.uint16)  # NOOP
+        self.last_action = 0  # NOOP
 
         return self.encode_state()
 
@@ -50,54 +46,58 @@ class SortingEnv(gym.Env):
 
     def encode_state(self):
 
-        return np.array([(self.ieq0 << 0) \
-            + (self.jeq0 << 1)            \
-            + (self.ieqlen << 2)          \
-            + (self.jeqlen << 3)          \
-            + (self.keq0 << 4)            \
-            + (self.keqlen << 5)          \
-            + (self.iltj << 6)            \
-            + (self.jlti << 7)            \
-            + (self.listigtlistj << 8)    \
-            + (self.last_action[0] << 9)], dtype=np.uint16)
+        return int((self.ieq0 << 0)    \
+            + (self.jeq0 << 1)         \
+            + (self.ieqlen << 2)       \
+            + (self.jeqlen << 3)       \
+            + (self.keq0 << 4)         \
+            + (self.keqlen << 5)       \
+            + (self.iltj << 6)         \
+            + (self.jlti << 7)         \
+            + (self.listigtlistj << 8) \
+            + (self.last_action << 9))
 
     def step(self, action):
 
         reward = 0
         done = False
 
+        # NOOP
+        if action == 0:
+            raise Exception('NOOP is not permitted!')
+
         # TERMINATE
-        if action[0] == 1:
+        elif action == 1:
 
             done = True
             reward = 100 if (self.list == sorted(self.list)) else -100
 
         # INCI
-        elif action[0] == 2:
+        elif action == 2:
             self.i = min(self.i + 1, self.len)
 
         # INCJ
-        elif action[0] == 3:
+        elif action == 3:
             self.j = min(self.j + 1, self.len)
 
         # INCK
-        elif action[0] == 4:
+        elif action == 4:
             self.k = min(self.k + 1, np.iinfo(np.uint64).max)
 
         # SETIZERO
-        elif action[0] == 5:
+        elif action == 5:
             self.i = 0
         
         # SETJZERO
-        elif action[0] == 6:
+        elif action == 6:
             self.j = 0
 
         # SETKZERO
-        elif action[0] == 7:
+        elif action == 7:
             self.k = 0
 
         # SWAP
-        elif action[0] == 8:
+        elif action == 8:
 
             # Out of bounds exception. Swap not possible.
             if (self.i >= self.len) or (self.j >= self.len):
@@ -137,7 +137,7 @@ class SortingEnv(gym.Env):
             'SETJZERO',
             'SETKZERO',
             'SWAP'
-        ][self.last_action[0]]
+        ][self.last_action]
 
     def render(self, mode='ascii'):
 
