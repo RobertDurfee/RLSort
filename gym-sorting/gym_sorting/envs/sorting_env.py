@@ -24,7 +24,7 @@ class SortingEnv(gym.Env):
         self.j = 0
         self.k = 0
         self.len = len(self.init_list)
-        self.list = self.init_list
+        self.list = self.init_list.copy()
 
         # RP-Specific
         self.update_flags()
